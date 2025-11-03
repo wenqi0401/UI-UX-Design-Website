@@ -49,8 +49,21 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
+// Throttle function to limit execution frequency
+function throttle(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
 // Add active state to navigation links based on scroll position
-window.addEventListener('scroll', () => {
+const handleNavScroll = throttle(() => {
     const sections = document.querySelectorAll('section[id]');
     const navbarHeight = document.querySelector('.navbar').offsetHeight;
     
@@ -74,7 +87,9 @@ window.addEventListener('scroll', () => {
             }
         }
     });
-});
+}, 100);
+
+window.addEventListener('scroll', handleNavScroll);
 
 // Form submission handler
 const contactForm = document.querySelector('.contact-form');
@@ -90,14 +105,52 @@ if (contactForm) {
         
         // Simple validation
         if (!name || !email || !message) {
-            alert('Please fill in all fields');
+            showFormMessage('Please fill in all fields', 'error');
             return;
         }
         
         // Simulate form submission (replace with actual API call in production)
-        alert(`Thank you for your message, ${name}! I'll get back to you soon.`);
+        showFormMessage(`Thank you for your message, ${name}! I'll get back to you soon.`, 'success');
         contactForm.reset();
     });
+}
+
+// Helper function to show form messages
+function showFormMessage(message, type) {
+    // Create message element
+    const messageEl = document.createElement('div');
+    messageEl.textContent = message;
+    messageEl.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 2rem;
+        border-radius: 10px;
+        background: ${type === 'success' ? '#48bb78' : '#f56565'};
+        color: white;
+        font-weight: 500;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    // Add animation
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    document.body.appendChild(messageEl);
+    
+    // Remove message after 3 seconds
+    setTimeout(() => {
+        messageEl.style.animation = 'slideIn 0.3s ease reverse';
+        setTimeout(() => messageEl.remove(), 300);
+    }, 3000);
 }
 
 // Animate elements on scroll
@@ -129,22 +182,25 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Add parallax effect to hero section
-window.addEventListener('scroll', () => {
+// Add parallax effect to hero section and navbar shadow on scroll
+const handleScroll = throttle(() => {
     const scrolled = window.pageYOffset;
     const heroIllustration = document.querySelector('.hero-illustration');
+    const navbar = document.querySelector('.navbar');
     
+    // Parallax effect
     if (heroIllustration && scrolled < 600) {
         heroIllustration.style.transform = `translateY(${scrolled * 0.3}px)`;
     }
-});
-
-// Navbar shadow on scroll
-window.addEventListener('scroll', () => {
-    const navbar = document.querySelector('.navbar');
-    if (window.scrollY > 50) {
-        navbar.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.1)';
-    } else {
-        navbar.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.05)';
+    
+    // Navbar shadow
+    if (navbar) {
+        if (scrolled > 50) {
+            navbar.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.1)';
+        } else {
+            navbar.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.05)';
+        }
     }
-});
+}, 100);
+
+window.addEventListener('scroll', handleScroll);
